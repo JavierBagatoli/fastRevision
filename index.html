@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contador de Palabras</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1f1f1f;
+      color: lightgray;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: #1f1f1f;
+    }
+    th, td {
+      border: 1px solid darkgray;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #1f1f1f;
+    }
+    textarea{
+      background-color:#343434;
+      color: rgb(176, 176, 176);
+    }
+    .red-row{
+      background-color: rgba(139, 0, 0, 0.678);
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Contador de Palabras (ordenado de mayor a menor)</h2>
+  <textarea id="inputText" placeholder="Introduce tu texto aquí..."></textarea>
+  <input type="checkbox" name="preposiciones" value="prepo" checked onclick="switchPreposiciones()"> Omitir Preposiciones
+  <input type="checkbox" name="articulos" value="arti" checked onclick="switchArticulos()"> Omitir Articulos
+  <input type="checkbox" name="otro" value="ot" onclick="switchMente()"> Omitir Otro
+  <button onclick="contarPalabras()">Contar Palabras</button>
+  <button onclick="showErrorDialogs()">Revisar Dialogos</button>
+
+
+  <div id="contador-palabras"></div>
+
+  <div id="resultado"></div>
+
+  <script>
+    var omitirPreposiciones = true;
+    var omitirArticulos = true;
+    var omitirMente = false;
+
+    function switchPreposiciones(){
+      this.omitirPreposiciones = !this.omitirPreposiciones;
+    }
+
+    function switchArticulos(){
+      this.omitirArticulos = !this.omitirArticulos;
+    }
+
+    function switchMente(){
+      this.omitirMente = !this.omitirMente;
+    }
+
+    function contarPalabras() {
+      const texto = document.getElementById("inputText").value;
+
+      const palabras = texto
+        .toLowerCase()
+        .replace(/[.,!?¿¡:;"()\-_\[\]{}<>]/g, '')
+        .split(/\s+/)
+        .filter(p => p); // Elimina strings vacíos
+
+      const contador = {};
+      palabras.forEach(palabra => {
+        contador[palabra] = (contador[palabra] || 0) + 1;
+      });
+
+      const resultadoOrdenado = Object.entries(contador)
+        .sort((a, b) => b[1] - a[1]); // Orden descendente
+
+      let html = `<table><tr><th>Palabra</th><th>Frecuencia</th></tr>`;
+      resultadoOrdenado.forEach(([palabra, frecuencia]) => {
+        const preoposiciones = [
+            'a', 'ante', 'bajo', 'con', 'contra', 'de', 'desde', 'durante', 'en', 'entre', 'hacia', 'hasta', 'mediante', 'para', 'por', 'según', 'sin', 'sobre', 'tras', 'versus','vía'
+        ]
+
+        const articulos = [
+            'el', 'la', 'los', 'las', 'que'
+        ]
+
+        if(preoposiciones.includes(palabra) && this.omitirPreposiciones){
+          return
+        }
+
+        if(articulos.includes(palabra) && this.omitirArticulos){
+          return
+        }
+
+        if(palabra.includes('mente') && this.omitirMente){
+          return
+        }
+
+        const styleRow = `class='${(frecuencia > palabras.length /222)? 'red-row': ''}'`
+
+        html += `<tr><td onClick="magic('${palabra}')" ${styleRow}>${palabra}
+          <p id="palabra-${palabra}"></p>
+          </td><td>${frecuencia} - ${((frecuencia/ palabras.length)*100).toFixed(4)}%</td></tr>`;
+      });
+      html += `</table>`;
+
+      document.getElementById("contador-palabras").innerHTML = `<p>Cantidad de palabras: ${palabras.length}`  
+      document.getElementById("resultado").innerHTML = html;
+    }
+
+    function magic(palabra, withS = false){
+      const url = `https://www.wordreference.com/sinonimos/${palabra}`;
+      let listSinonimos = "";
+      
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const divifo = doc.querySelectorAll('.FTlist > a'); // Ajusta tu selector aquí
+          divifo.forEach(
+            hiper => listSinonimos = listSinonimos + hiper.innerHTML + ", "
+          )
+
+          if(divifo.length === 0){
+            if (palabra.endsWith("s")) {
+              let newPalabra = palabra.slice(0, -1);
+              magic(newPalabra,true);
+            }else{
+              document.getElementById(`palabra-${palabra}`).innerHTML = "Error al buscar";
+            }
+          }
+
+          let palabraId = palabra
+          if(withS){
+            palabraId = palabraId + "s"
+          }
+          document.getElementById(`palabra-${palabraId}`).innerHTML = listSinonimos;
+        })
+        .catch(err => {
+          console.error('Error:', err)
+        });
+    }
+
+    function showErrorDialogs(){
+      const startDialog = '—';
+      const vectorVerbosDialog = ['dij', 'susurr', 'respond', 'pregunt'];
+
+      const texto = document.getElementById("inputText").value;
+
+      const palabras = texto
+        .replace(/[.,!?¿¡:;"()\-_\[\]{}<>]/g, '')
+        .split(/\s+/)
+        .filter(p => p); // Elimina strings vacíos
+
+      let html = `<table><tr><th>Palabra</th><th>Frecuencia</th></tr>`;
+
+      palabras.forEach(palabra => {
+        try{
+          if(palabra.startsWith(startDialog))
+            if(palabra.length === 1){
+              html += `<tr><td>${palabra}</td><td>No debe haber espacios</td></tr>`;
+              return
+            }else{
+              isVerboDialog = false;
+              vectorVerbosDialog.forEach(verboDialog => {
+                //El dialogo tiene un verbo de hablar con mayuscula -- —a —dijo —Dijo
+                if(palabra.includes(startDialog + verboDialog)){
+                  isVerboDialog = true; 
+                }else if(palabra.includes(startDialog + verboDialog[0].toUpperCase() + verboDialog.replace(/^./, ""))){
+                    html += `<tr><td>${palabra}</td><td>Debe iniciar en minuscula</td></tr>`;
+                    isVerboDialog = true;
+                    return
+                }
+              })
+              if(!isVerboDialog && palabra[1] !== palabra[1].toUpperCase()){
+                html += `<tr><td>${palabra}</td><td>Debe iniciar en mayuscula</td></tr>`;
+              }
+            }
+            
+          }catch(err){
+            console.log(palabra,err)
+          }
+        }
+      )
+      
+      html += `</table>`;
+      document.getElementById("resultado").innerHTML = html;
+    }
+  </script>
+
+</body>
+</html>

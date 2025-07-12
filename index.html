@@ -44,12 +44,17 @@
   <textarea id="inputText" placeholder="Introduce tu texto aquí..."></textarea>
   <input type="checkbox" name="preposiciones" value="prepo" checked onclick="switchPreposiciones()"> Omitir Preposiciones
   <input type="checkbox" name="articulos" value="arti" checked onclick="switchArticulos()"> Omitir Articulos
-  <input type="checkbox" name="otro" value="ot" onclick="switchMente()"> Omitir Otro
+  <input type="checkbox" name="otro" value="ot" onclick="switchMente()"> Omitir -mente
+  <input type="checkbox" name="cuentaGlobal" value="ot" onclick="switchCuentaGlobal()"> Mostrar solo cuenta global
   <button onclick="contarPalabras()">Contar Palabras</button>
   <button onclick="showErrorDialogs()">Revisar Dialogos</button>
 
 
   <div id="contador-palabras"></div>
+  <div id="contador-mentes"></div>
+
+  <label for="filtro">Filtrar palabras:</label>
+  <input type="text" name="filtro" value="">
 
   <div id="resultado"></div>
 
@@ -57,6 +62,7 @@
     var omitirPreposiciones = true;
     var omitirArticulos = true;
     var omitirMente = false;
+    var soloCuentaGlobal = false;
 
     function switchPreposiciones(){
       this.omitirPreposiciones = !this.omitirPreposiciones;
@@ -68,6 +74,10 @@
 
     function switchMente(){
       this.omitirMente = !this.omitirMente;
+    }
+
+    function switchCuentaGlobal(){
+      this.soloCuentaGlobal = !this.soloCuentaGlobal;
     }
 
     function contarPalabras() {
@@ -82,6 +92,19 @@
       const contador = {};
       palabras.forEach(palabra => {
         contador[palabra] = (contador[palabra] || 0) + 1;
+        // Si la palabra termina en 's', se agrega una entrada con el prefijo '_'
+        if(palabra.toLowerCase().endsWith('s')){
+          const palabraSinS = palabra.slice(0, -1);
+          if(contador[palabraSinS] > 0){
+            const globalCount = "_"+palabraSinS;
+            if(contador[globalCount] === undefined){
+              contador[globalCount] = (contador[palabraSinS]) + 1;
+            }else{
+              contador[globalCount] += 1;
+            }
+          }
+          contador[palabra] = (contador[palabra] || 0) + 1;
+        }          
       });
 
       const resultadoOrdenado = Object.entries(contador)
@@ -109,6 +132,15 @@
           return
         }
 
+        if((this.soloCuentaGlobal && !palabra.startsWith('_') || (!this.soloCuentaGlobal && palabra.startsWith('_')))){
+          return
+        }
+
+        let inputFiltro = document.querySelector('input[name="filtro"]').value.toLowerCase();
+        if(!palabra.includes(inputFiltro) && inputFiltro !== ""){
+          return
+        }
+
         const styleRow = `class='${(frecuencia > palabras.length /222)? 'red-row': ''}'`
 
         html += `<tr><td onClick="magic('${palabra}')" ${styleRow}>${palabra}
@@ -118,6 +150,7 @@
       html += `</table>`;
 
       document.getElementById("contador-palabras").innerHTML = `<p>Cantidad de palabras: ${palabras.length}`  
+      document.getElementById("contador-mentes").innerHTML = `<p>Cantidad de -mente: ${palabras.filter(p => p.endsWith('mente')).length}</p>`  
       document.getElementById("resultado").innerHTML = html;
     }
 
@@ -157,7 +190,7 @@
 
     function showErrorDialogs(){
       const startDialog = '—';
-      const vectorVerbosDialog = ['dij', 'susurr', 'respond', 'pregunt'];
+      const vectorVerbosDialog = ['dij', 'susurr', 'respond', 'pregunt', 'repli', 'expli', 'coment', 'grit', 'exclam', 'afirm', 'negat', 'reconoc', 'admit', 'confes', 'asegur', 'declar', 'anunci', 'expres', 'murmur', 'revel', 'manifest', 'proclam', 'exhort', 'orden', 'suplic', 'implor', 'rog', 'implor'];
 
       const texto = document.getElementById("inputText").value;
 

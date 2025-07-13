@@ -49,7 +49,7 @@
   <button onclick="contarPalabras()">Contar Palabras</button>
   <button onclick="showErrorDialogs()">Revisar Dialogos</button>
 
-
+  <div id="contador-paginas"></div>
   <div id="contador-palabras"></div>
   <div id="contador-mentes"></div>
 
@@ -93,18 +93,20 @@
       palabras.forEach(palabra => {
         contador[palabra] = (contador[palabra] || 0) + 1;
         // Si la palabra termina en 's', se agrega una entrada con el prefijo '_'
-        if(palabra.toLowerCase().endsWith('s')){
-          const palabraSinS = palabra.slice(0, -1);
-          if(contador[palabraSinS] > 0){
-            const globalCount = "_"+palabraSinS;
-            if(contador[globalCount] === undefined){
-              contador[globalCount] = (contador[palabraSinS]) + 1;
-            }else{
-              contador[globalCount] += 1;
+        if(soloCuentaGlobal){
+          if(palabra.toLowerCase().endsWith('s')){
+            const palabraSinS = palabra.slice(0, -1);
+            if(contador[palabraSinS] > 0){
+              const globalCount = "_"+palabraSinS;
+              if(contador[globalCount] === undefined){
+                contador[globalCount] = (contador[palabraSinS]) + 1;
+              }else{
+                contador[globalCount] += 1;
+              }
             }
-          }
-          contador[palabra] = (contador[palabra] || 0) + 1;
-        }          
+            contador[palabra] = (contador[palabra] || 0) + 1;
+          }          
+        }
       });
 
       const resultadoOrdenado = Object.entries(contador)
@@ -149,6 +151,7 @@
       });
       html += `</table>`;
 
+      document.getElementById("contador-paginas").innerHTML = `<p>Cantidad de paginas: ${Math.round(palabras.length/222)}`  
       document.getElementById("contador-palabras").innerHTML = `<p>Cantidad de palabras: ${palabras.length}`  
       document.getElementById("contador-mentes").innerHTML = `<p>Cantidad de -mente: ${palabras.filter(p => p.endsWith('mente')).length}</p>`  
       document.getElementById("resultado").innerHTML = html;
